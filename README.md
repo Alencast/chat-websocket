@@ -1,32 +1,83 @@
-# 🚀 Chat WebSocket - API Gateway
+# 🚀 Chat WebSocket - API Gateway com Microserviços
 
-Projeto de demonstração de um **API Gateway** integrado com **WebSocket**, implementando **HATEOAS** e integrando dois serviços internos simples. O projeto utiliza Node.js, Express, WebSocket e Swagger para documentação.
+Projeto completo demonstrando **transmissão de dados com WebSocket** integrado a um **API Gateway** que centraliza o acesso a dois microserviços internos. Implementa **HATEOAS**, documentação **Swagger** e um **cliente web** para chat em tempo real.
 
-## 📋 Descrição do Projeto
+## 📋 Sobre o Projeto
 
-Este projeto demonstra:
+Este projeto implementa um estudo de caso de **transmissão de dados usando WebSocket** em uma arquitetura de microserviços, atendendo todos os requisitos:
 
-- **API Gateway centralizado**: Roteia requisições para serviços internos
-- **WebSocket em tempo real**: Comunicação bidirecional entre cliente e servidor
-- **HATEOAS**: Navegabilidade da API através de hypermedia
-- **Swagger/OpenAPI**: Documentação interativa da API
-- **Cliente Web**: Interface HTML/JS para testar o WebSocket
-- **Arquitetura de Microserviços**: Dois serviços internos (A e B)
+### ✅ Requisitos Implementados
 
-## 🏗️ Estrutura do Projeto
+#### **Regras API Gateway:**
+- ✅ **API Gateway desenvolvido**: Gateway centralizado que roteia requisições para serviços internos
+- ✅ **HATEOAS implementado**: Endpoint `/api` retorna links navegáveis para todos os recursos
+- ✅ **Documentação da API**: Interface Swagger completa em `/docs`
+- ✅ **2 APIs internas simuladas**:
+  - **Service A**: API de Usuários (gerenciamento de usuários)
+  - **Service B**: API de Mensagens (histórico de mensagens)
+- ✅ **Cliente Web desenvolvido**: Interface HTML/JS/CSS para acessar o Gateway e WebSocket
+
+#### **Regras WebSocket:**
+- ✅ **Servidor WebSocket**: Classe que fornece endpoint `/ws` e gerencia ciclo de vida completo
+- ✅ **Cliente WebSocket**: Objeto WebSocket instanciado no navegador com gerenciamento de ciclo de vida (conexão, mensagens, erros, desconexão)
+
+### 🎯 Funcionalidades
+
+- **Chat em tempo real**: Múltiplos usuários conversando simultaneamente
+- **API Gateway com HATEOAS**: Navegação completa da API através de hypermedia
+- **Microserviços internos**: Arquitetura com dois serviços independentes
+- **Documentação Swagger**: API totalmente documentada e testável
+- **Cliente Web interativo**: Interface moderna para testar WebSocket
+- **Acesso em rede local**: Permite chat entre dispositivos na mesma rede
+
+## 🏗️ Arquitetura do Projeto
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CLIENTE WEB (Browser)                   │
+│  - Interface HTML/CSS/JS                                    │
+│  - Objeto WebSocket gerenciando ciclo de vida              │
+│  - Conexão/Reconexão/Envio/Recebimento de mensagens        │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 │ HTTP/WebSocket
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      API GATEWAY (gateway.js)                │
+│  - Roteamento centralizado                                  │
+│  - Endpoint WebSocket (/ws) com gerenciamento completo     │
+│  - HATEOAS (/api) com links navegáveis                     │
+│  - Documentação Swagger (/docs)                            │
+└────────┬──────────────────────────────┬─────────────────────┘
+         │                              │
+         │ Integração                   │ Integração
+         ▼                              ▼
+┌──────────────────────┐      ┌──────────────────────┐
+│   SERVICE A          │      │   SERVICE B          │
+│   (usersService.js)  │      │ (messagesService.js) │
+│                      │      │                      │
+│ - API de Usuários    │      │ - API de Mensagens   │
+│ - GET /api/users     │      │ - GET /api/messages  │
+│ - GET /api/users/:id │      │ - GET /api/messages/ │
+│                      │      │         recent       │
+└──────────────────────┘      └──────────────────────┘
+```
+
+### 📁 Estrutura de Arquivos
 
 ```
 chat-websocket/
 │
-├── gateway.js                 # API Gateway principal com WebSocket
+├── gateway.js                    # API Gateway + Servidor WebSocket
 ├── services/
-│   ├── serviceA.js           # Serviço interno A
-│   └── serviceB.js           # Serviço interno B
+│   ├── usersService.js          # Service A - API de Usuários
+│   └── messagesService.js       # Service B - API de Mensagens
 ├── public/
-│   └── index.html            # Cliente web para testar WebSocket
-├── swagger.json              # Documentação OpenAPI/Swagger
-├── package.json              # Dependências do projeto
-└── README.md                 # Este arquivo
+│   └── index.html               # Cliente Web (HTML/CSS/JS puro)
+├── swagger.json                 # Documentação OpenAPI/Swagger
+├── package.json                 # Dependências do projeto
+├── .gitignore                   # Arquivos ignorados pelo Git
+└── README.md                    # Este arquivo
 ```
 
 ## 🔧 Tecnologias Utilizadas
@@ -77,24 +128,31 @@ node gateway.js
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
-║         API Gateway com WebSocket - Servidor Ativo        ║
+║        🚀 API Gateway + WebSocket - Servidor Ativo        ║
 ╠═══════════════════════════════════════════════════════════╣
-║  Servidor rodando em: http://localhost:3000              ║
+║  🖥️  Acesso Local:                                        ║
+║     http://localhost:3000                                ║
 ║                                                           ║
-║  📄 Endpoints REST:                                       ║
-║     • HATEOAS: http://localhost:3000/api                 ║
-║     • Service A: http://localhost:3000/api/service-a     ║
-║     • Service B: http://localhost:3000/api/service-b     ║
+║  🌐 Acesso na Rede:                                       ║
+║     http://192.168.1.10:3000                             ║
+║                                                           ║
+║  📄 Endpoints REST (HATEOAS):                             ║
+║     • Gateway: http://localhost:3000/api                 ║
+║     • Usuários: http://localhost:3000/api/users          ║
+║     • Mensagens: http://localhost:3000/api/messages      ║
 ║                                                           ║
 ║  🔌 WebSocket:                                            ║
 ║     • Endpoint: ws://localhost:3000/ws                   ║
 ║                                                           ║
 ║  📚 Documentação:                                         ║
-║     • Swagger UI: http://localhost:3000/docs             ║
+║     • Swagger: http://localhost:3000/docs                ║
 ║                                                           ║
-║  🌐 Cliente Web:                                          ║
-║     • Interface: http://localhost:3000/                  ║
+║  💬 Cliente Web:                                          ║
+║     • Chat: http://localhost:3000/                       ║
 ╚═══════════════════════════════════════════════════════════╝
+
+✅ Servidor pronto!
+📱 Compartilhe com outros na rede: http://192.168.1.10:3000
 ```
 
 ## 🧪 Como Testar
@@ -107,39 +165,59 @@ node gateway.js
 4. Clique em **"Enviar Mensagem"**
 5. Observe as mensagens no log (enviadas e recebidas)
 
-### 2. Testar os Endpoints REST
+### 2. Testar os Endpoints REST (API Gateway)
 
-#### HATEOAS - Endpoint raiz:
+#### HATEOAS - Endpoint raiz com links navegáveis:
 ```bash
 curl http://localhost:3000/api
 ```
 
-**Resposta esperada:**
+**Resposta esperada (HATEOAS):**
 ```json
 {
-  "message": "API Gateway - WebSocket Demo",
-  "links": {
+  "message": "API Gateway - Chat WebSocket com Microserviços",
+  "version": "1.0.0",
+  "status": "online",
+  "activeUsers": 0,
+  "_links": {
     "self": {
-      "href": "/api",
-      "method": "GET"
-    },
-    "service-a": {
-      "href": "/api/service-a",
+      "href": "http://localhost:3000/api",
       "method": "GET",
-      "description": "Consulta o Service A"
+      "description": "Endpoint raiz com HATEOAS"
     },
-    "service-b": {
-      "href": "/api/service-b",
+    "users": {
+      "href": "http://localhost:3000/api/users",
       "method": "GET",
-      "description": "Consulta o Service B"
+      "description": "API de Usuários (Service A)"
+    },
+    "userById": {
+      "href": "http://localhost:3000/api/users/{id}",
+      "method": "GET",
+      "description": "Buscar usuário por ID",
+      "templated": true
+    },
+    "messages": {
+      "href": "http://localhost:3000/api/messages",
+      "method": "GET",
+      "description": "API de Mensagens (Service B)"
+    },
+    "recentMessages": {
+      "href": "http://localhost:3000/api/messages/recent",
+      "method": "GET",
+      "description": "Buscar mensagens recentes"
+    },
+    "chat": {
+      "href": "http://localhost:3000/",
+      "method": "GET",
+      "description": "Interface web do chat"
     },
     "websocket": {
       "href": "ws://localhost:3000/ws",
       "protocol": "websocket",
-      "description": "Conexão WebSocket para comunicação em tempo real"
+      "description": "Endpoint WebSocket para chat em tempo real"
     },
     "documentation": {
-      "href": "/docs",
+      "href": "http://localhost:3000/docs",
       "method": "GET",
       "description": "Documentação Swagger da API"
     }
@@ -147,29 +225,59 @@ curl http://localhost:3000/api
 }
 ```
 
-#### Service A:
+#### Service A - API de Usuários:
 ```bash
-curl http://localhost:3000/api/service-a
+# Listar todos os usuários
+curl http://localhost:3000/api/users
+
+# Buscar usuário específico por ID
+curl http://localhost:3000/api/users/1
 ```
 
 **Resposta esperada:**
 ```json
 {
-  "service": "A",
-  "status": "ok"
+  "service": "users-api",
+  "data": [
+    {
+      "id": 1,
+      "name": "João Silva",
+      "email": "joao@email.com",
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "name": "Maria Santos",
+      "email": "maria@email.com",
+      "status": "active"
+    }
+  ],
+  "count": 3
 }
 ```
 
-#### Service B:
+#### Service B - API de Mensagens:
 ```bash
-curl http://localhost:3000/api/service-b
+# Listar todas as mensagens
+curl http://localhost:3000/api/messages
+
+# Buscar mensagens recentes (últimas 5)
+curl http://localhost:3000/api/messages/recent?limit=5
 ```
 
 **Resposta esperada:**
 ```json
 {
-  "service": "B",
-  "status": "ok"
+  "service": "messages-api",
+  "data": [
+    {
+      "id": 1,
+      "user": "João",
+      "text": "Olá pessoal!",
+      "timestamp": "2025-12-04T10:00:00Z"
+    }
+  ],
+  "count": 3
 }
 ```
 
@@ -220,26 +328,30 @@ A documentação Swagger inclui:
 ## 🔍 Como Acessar os Serviços
 
 ### Via Navegador:
-- **Cliente Web**: http://localhost:3000/
-- **HATEOAS**: http://localhost:3000/api
-- **Service A**: http://localhost:3000/api/service-a
-- **Service B**: http://localhost:3000/api/service-b
-- **Swagger**: http://localhost:3000/docs
+- **Cliente Web (Chat)**: http://localhost:3000/
+- **Gateway HATEOAS**: http://localhost:3000/api
+- **Service A (Usuários)**: http://localhost:3000/api/users
+- **Service A (Usuário por ID)**: http://localhost:3000/api/users/1
+- **Service B (Mensagens)**: http://localhost:3000/api/messages
+- **Service B (Mensagens Recentes)**: http://localhost:3000/api/messages/recent?limit=5
+- **Swagger Docs**: http://localhost:3000/docs
 
 ### Via cURL (Terminal):
 ```bash
-# HATEOAS
+# Gateway com HATEOAS
 curl http://localhost:3000/api
 
-# Service A
-curl http://localhost:3000/api/service-a
+# Service A - Usuários
+curl http://localhost:3000/api/users
+curl http://localhost:3000/api/users/1
 
-# Service B
-curl http://localhost:3000/api/service-b
+# Service B - Mensagens
+curl http://localhost:3000/api/messages
+curl http://localhost:3000/api/messages/recent?limit=5
 ```
 
 ### Via Postman/Insomnia:
-Importe as URLs acima como requisições GET.
+Importe as URLs acima como requisições GET ou use a documentação Swagger.
 
 ## 🎯 Funcionalidades do WebSocket
 
@@ -329,25 +441,4 @@ Comunicação bidirecional em tempo real, mantendo conexões persistentes.
 ### Documentação OpenAPI/Swagger
 Especificação padrão da indústria para documentar APIs REST.
 
-## 🚀 Próximos Passos (Melhorias Possíveis)
 
-- Adicionar autenticação JWT
-- Implementar rate limiting
-- Adicionar mais serviços internos
-- Implementar broadcast de mensagens WebSocket
-- Adicionar persistência com banco de dados
-- Implementar testes automatizados
-- Adicionar Docker e Docker Compose
-- Deploy em cloud (Azure, AWS, Heroku)
-
-## 📄 Licença
-
-Este projeto é de código aberto e está disponível para fins educacionais.
-
-## 👤 Autor
-
-Projeto de demonstração - WebSocket API Gateway
-
----
-
-**Desenvolvido com ❤️ usando Node.js e Express**
