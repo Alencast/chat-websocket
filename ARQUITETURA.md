@@ -1,63 +1,135 @@
-# 🔍 ARQUITETURA E FLUXO DE COMUNICAÇÃO DO SISTEMA
+# 🎯 Arquitetura do Sistema — Guia de Apresentação
 
-## 📊 Visão Geral da Arquitetura
+Este documento te ajuda a explicar, de forma simples e visual, como o sistema funciona, como os arquivos se relacionam e quais tecnologias estão em uso. Use-o como roteiro na apresentação.
 
+## 📦 O que é o sistema?
+- Um API Gateway central que:
+  - expõe rotas REST documentadas (Swagger)
+  - implementa HATEOAS em `/api`
+  - integra dois serviços internos (Usuários e Mensagens)
+  - oferece um servidor WebSocket em `/ws` para chat em tempo real
+- Um Cliente Web (HTML/JS) que consome o Gateway e o WebSocket.
+
+## 🛠️ Tecnologias
+- Node.js + Express (servidor HTTP)
+- express-ws (WebSocket integrado ao Express)
+- swagger-ui-express + `swagger.json` (documentação da API)
+- HTML, CSS e JavaScript puro (cliente web)
+
+## 🗺️ Mapa de Arquivos (quem fala com quem)
+- `gateway.js`
+  - Servidor Express e WebSocket
+  - Roteia e orquestra chamadas aos services
+  - Expõe `/api`, `/docs`, `/ws` e serve `public/`
+  - Usa `services/usersService.js` e `services/messagesService.js`
+- `services/usersService.js`
+  - Funções: `getAllUsers()`, `getUserById(id)`
+  - Retorna dados estáticos simulando uma API de usuários
+- `services/messagesService.js`
+  - Funções: `getAllMessages()`, `getRecentMessages(limit)`
+  - Retorna histórico/mensagens recentes simuladas
+- `public/index.html`
+  - Interface do chat
+  - Código JS do cliente WebSocket
+  - Chama `/api` para navegar e `/docs` para ver Swagger
+- `swagger.json`
+  - Documenta `/api`, `/api/users`, `/api/users/{id}`, `/api/messages`, `/api/messages/recent`
+  - Descreve a funcionalidade do WebSocket em `x-websocket`
+
+## 🧩 Diagrama simples (visual)
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                    CAMADA DE APRESENTAÇÃO                       │
-│                      (Cliente Web)                              │
-│  Arquivo: public/index.html                                    │
-│  - Interface HTML/CSS                                          │
-│  - JavaScript com WebSocket Client                             │
-└─────────────────────┬──────────────────────────────────────────┘
-                      │
-                      │ Protocolo: HTTP + WebSocket (ws://)
-                      │ Porta: 3000
-                      │
-                      ▼
-┌────────────────────────────────────────────────────────────────┐
-│                   CAMADA DE GATEWAY                             │
-│                   (API Gateway + WebSocket Server)              │
-│  Arquivo: gateway.js                                           │
-│  - Express.js (framework web)                                  │
-│  - express-ws (WebSocket server)                               │
-│  - Roteamento HTTP                                             │
-│  - Gerenciamento de conexões WebSocket                        │
-│  - HATEOAS implementation                                      │
-└──────────┬─────────────────────────────┬───────────────────────┘
-           │                             │
-           │ Chamadas de função          │ Chamadas de função
-           │ (require/import)            │ (require/import)
-           │                             │
-           ▼                             ▼
-┌──────────────────────┐      ┌──────────────────────────┐
-│  CAMADA DE SERVIÇOS  │      │  CAMADA DE SERVIÇOS      │
-│  (Service A)         │      │  (Service B)             │
-│                      │      │                          │
-│  Arquivo:            │      │  Arquivo:                │
-│  usersService.js     │      │  messagesService.js      │
-│                      │      │                          │
-│  Funções:            │      │  Funções:                │
-│  - getAllUsers()     │      │  - getAllMessages()      │
-│  - getUserById(id)   │      │  - getRecentMessages()   │
-└──────────────────────┘      └──────────────────────────┘
+CLIENTE (index.html)
+ ├─ HTTP: /api, /docs, /api/users, /api/messages
+ └─ WS:   ws://host/ws
+
+API GATEWAY (gateway.js)
+ ├─ REST: express + swagger
+ ├─ WS:   express-ws (chat, broadcast, usuários online)
+ ├─ HATEOAS: GET /api retorna _links navegáveis
+ ├─ Services:
+ │   ├─ usersService.getAllUsers(), getUserById(id)
+ │   └─ messagesService.getAllMessages(), getRecentMessages(n)
+ └─ Static: serve public/index.html
 ```
 
----
+## 🔗 HATEOAS — Como apresentar
+- Acesse `GET /api` e mostre que a resposta terá `_links` com:
+  - `self`, `users`, `userById`, `messages`, `recentMessages`, `chat`, `websocket`, `documentation`
+- Explique: o cliente pode descobrir a API navegando por esses links, sem precisar de um manual.
 
-## 🔄 FLUXO 1: INICIALIZAÇÃO DO SERVIDOR
+## 🔄 Fluxos principais (debug friendly)
 
-### 1.1 Startup (gateway.js - linhas 1-25)
+### 1) Fluxo REST — listar usuários
+1. Cliente faz `GET /api/users`
+2. `gateway.js` loga: `[Gateway] → Service A: Requisição para listar usuários`
+3. Chama `usersService.getAllUsers()`
+4. Retorna JSON: `{ service: 'users-api', data: [...], count: n }`
+5. Cliente recebe a lista
 
-```javascript
-// PASSO 1: Importação de dependências
-const express = require('express');           // Framework web
-const expressWs = require('express-ws');      // WebSocket para Express
-const swaggerUi = require('swagger-ui-express'); // UI do Swagger
-const swaggerDocument = require('./swagger.json'); // Configuração Swagger
+### 2) Fluxo REST — usuário por ID
+1. Cliente faz `GET /api/users/1`
+2. `gateway.js` chama `usersService.getUserById('1')`
+3. Se não encontrar: `404` com `{ error: 'Usuário não encontrado' }`
+4. Se encontrar: `{ service: 'users-api', data: { ... }, found: true }`
 
-// PASSO 2: Importação dos microserviços
-const usersService = require('./services/usersService');     // Service A
+### 3) Fluxo REST — mensagens recentes
+1. Cliente faz `GET /api/messages/recent?limit=5`
+2. `gateway.js` chama `messagesService.getRecentMessages(5)`
+3. Resposta: últimas `n` mensagens do array estático
+
+### 4) Fluxo WebSocket — chat em tempo real
+1. `index.html` chama `new WebSocket('ws://host/ws')`
+2. Servidor (`gateway.js`) aceita conexão, envia `{ type: 'welcome', clientId }`
+3. Cliente envia `{ type: 'setUsername', username }`
+4. Servidor valida e confirma com `{ type: 'usernameAccepted' }`
+5. Broadcasts:
+   - Novo usuário: `{ type: 'userJoined' }` para todos
+   - Lista de usuários: `{ type: 'userList', users: [...] }`
+6. Mensagens:
+   - Cliente envia `{ type: 'message', message }`
+   - Servidor reenvia para todos `{ type: 'message', username, userId, message, timestamp }`
+7. Desconexão:
+   - Servidor remove do mapa e envia `{ type: 'userLeft' }` + nova `userList`
+
+## 🧠 Principais métodos e responsabilidades
+- `gateway.js`
+  - `app.get('/api', ...)`: monta HATEOAS
+  - `app.get('/api/users', ...)`: integra Service A
+  - `app.get('/api/users/:id', ...)`: integra Service A
+  - `app.get('/api/messages', ...)`: integra Service B
+  - `app.get('/api/messages/recent', ...)`: integra Service B com `limit`
+  - `app.ws('/ws', ...)`: gerencia conexão, username, mensagens, desconexão
+  - `broadcastMessage(msg, excludeWs)`: envia para todos
+  - `broadcastUserList()`: sincroniza usuários online
+  - `getLocalIP()`: mostra link de acesso na rede
+- `usersService.js`
+  - `getAllUsers()`: retorna array mockado
+  - `getUserById(id)`: busca no array
+- `messagesService.js`
+  - `getAllMessages()`: retorna histórico mockado
+  - `getRecentMessages(limit)`: últimos `limit` itens
+- `index.html`
+  - `connectWebSocket()`: abre WS e registra handlers
+  - `setUsername()`: envia o nome
+  - `sendMessage()`: envia mensagem
+  - `addChatMessage() / addSystemMessage() / updateUsersList()`: atualiza UI
+
+## 🧪 Como demonstrar (script rápido de 5 minutos)
+1. Inicie: `npm start` e abra `http://localhost:3000`
+2. Mostre `/api` (HATEOAS) e `/docs` (Swagger)
+3. Abra duas abas/um celular e escolha nomes diferentes
+4. Envie mensagens entre as abas — destaque broadcast e isOwn
+5. Feche uma aba — destaque `userLeft` e lista atualizada
+6. Mostre `/api/users` e `/api/messages/recent?limit=2`
+
+## 📚 Glossário simples
+- **API Gateway**: ponto único de entrada para várias APIs internas
+- **HATEOAS**: respostas REST incluem links para navegar a API
+- **WebSocket**: conexão persistente bidirecional (tempo real)
+- **Swagger**: documentação interativa da API
+
+## ✅ Conclusão
+Este estudo de caso demonstra transmissão de dados em tempo real via WebSocket, centralização via API Gateway, navegabilidade com HATEOAS e documentação com Swagger — tudo com Node.js e JavaScript puro.
 const messagesService = require('./services/messagesService'); // Service B
 
 // PASSO 3: Criação da aplicação Express
