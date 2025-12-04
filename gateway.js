@@ -3,30 +3,44 @@
  * Centraliza requisições para serviços internos e implementa WebSocket
  */
 
+// Servidor HTTP principal baseado em Express.
 const express = require('express');
+// Integra suporte a WebSocket dentro do Express.
 const expressWs = require('express-ws');
+// Middleware que serve a UI do Swagger para documentação.
 const swaggerUi = require('swagger-ui-express');
+// Especificação OpenAPI que descreve as rotas REST do Gateway.
 const swaggerDocument = require('./swagger.json');
+// Service A: encapsula operações de usuários.
 const usersService = require('./services/usersService');
+// Service B: encapsula operações de mensagens/histórico.
 const messagesService = require('./services/messagesService');
 
+// Instância principal do aplicativo Express.
 const app = express();
+// Habilita o endpoint WebSocket via express-ws (adiciona app.ws).
 const wsInstance = expressWs(app);
 
 const PORT = process.env.PORT || 3000;
 
 // Armazenar conexões ativas de chat
+// Mapa de clientes conectados (ws -> { username, id }).
 const chatClients = new Map(); // Map<ws, {username, id}>
+// Contador incremental para atribuir IDs aos clientes WS.
 let clientIdCounter = 0;
 
 // Middleware
+// Habilita parsing de JSON nas requisições REST.
 app.use(express.json());
+// Serve arquivos estáticos do cliente (UI do chat).
 app.use(express.static('public'));
 
 // Swagger Documentation
+// Exposição da documentação em /docs.
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // HATEOAS - Endpoint raiz da API Gateway
+// Endpoint raiz com HATEOAS: orienta navegação por links.
 app.get('/api', (req, res) => {
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   const wsProtocol = req.protocol === 'https' ? 'wss' : 'ws';
@@ -83,12 +97,14 @@ app.get('/api', (req, res) => {
 });
 
 // API Gateway - Rota para Service A (Usuários)
+// Lista todos os usuários do Service A.
 app.get('/api/users', (req, res) => {
   console.log('[Gateway] → Service A: Requisição para listar usuários');
   const data = usersService.getAllUsers();
   res.json(data);
 });
 
+// Busca um usuário específico por ID.
 app.get('/api/users/:id', (req, res) => {
   console.log(`[Gateway] → Service A: Requisição para usuário ID ${req.params.id}`);
   const data = usersService.getUserById(req.params.id);
@@ -104,12 +120,14 @@ app.get('/api/users/:id', (req, res) => {
 });
 
 // API Gateway - Rota para Service B (Mensagens)
+// Lista todas as mensagens do Service B.
 app.get('/api/messages', (req, res) => {
   console.log('[Gateway] → Service B: Requisição para listar mensagens');
   const data = messagesService.getAllMessages();
   res.json(data);
 });
 
+// Retorna as mensagens mais recentes, limitado por "limit".
 app.get('/api/messages/recent', (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   console.log(`[Gateway] → Service B: Requisição para ${limit} mensagens recentes`);
@@ -118,6 +136,7 @@ app.get('/api/messages/recent', (req, res) => {
 });
 
 // Função para broadcast de mensagem para todos os clientes
+// Envia uma mensagem para todos os clientes conectados.
 function broadcastMessage(message, excludeWs = null) {
   chatClients.forEach((client, ws) => {
     if (ws !== excludeWs && ws.readyState === 1) { // 1 = OPEN
@@ -127,6 +146,7 @@ function broadcastMessage(message, excludeWs = null) {
 }
 
 // Função para enviar lista de usuários online
+// Sincroniza a lista de usuários conectados com todos os clientes.
 function broadcastUserList() {
   const users = Array.from(chatClients.values()).map(client => ({
     id: client.id,
@@ -147,6 +167,7 @@ function broadcastUserList() {
 }
 
 // WebSocket Endpoint - Chat em Tempo Real
+// Endpoint WebSocket: gerencia conexão, username e troca de mensagens.
 app.ws('/ws', (ws, req) => {
   const clientId = ++clientIdCounter;
   let username = null;
@@ -161,6 +182,7 @@ app.ws('/ws', (ws, req) => {
   }));
 
   // Receber mensagens do cliente
+  // Processa mensagens recebidas do cliente.
   ws.on('message', (msg) => {
     try {
       const data = JSON.parse(msg);
@@ -257,6 +279,7 @@ app.ws('/ws', (ws, req) => {
   });
 
   // Evento de desconexão
+  // Remove cliente ao desconectar e notifica demais.
   ws.on('close', () => {
     if (username) {
       console.log(`[Chat] Usuário "${username}" (ID: ${clientId}) saiu do chat`);
@@ -280,6 +303,7 @@ app.ws('/ws', (ws, req) => {
   });
 
   // Evento de erro
+  // Trata erros na conexão WS e realiza limpeza.
   ws.on('error', (error) => {
     console.error(`[Chat] Erro (ID: ${clientId}):`, error);
     chatClients.delete(ws);
@@ -292,6 +316,7 @@ app.get('/', (req, res) => {
 });
 
 // Função para obter IP local
+// Descobre IP local para facilitar acesso via rede (LAN).
 function getLocalIP() {
   const os = require('os');
   const interfaces = os.networkInterfaces();
@@ -307,6 +332,7 @@ function getLocalIP() {
 }
 
 // Iniciar servidor em todas as interfaces (0.0.0.0)
+// Inicializa servidor escutando em 0.0.0.0 (acesso LAN).
 app.listen(PORT, '0.0.0.0', () => {
   const localIP = getLocalIP();
   

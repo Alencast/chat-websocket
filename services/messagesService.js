@@ -3,12 +3,14 @@
  * Simula um serviço interno de histórico de mensagens
  */
 
+// Histórico mockado de mensagens (somente em memória).
 const messages = [
   { id: 1, user: 'João', text: 'Olá pessoal!', timestamp: '2025-12-04T10:00:00Z' },
   { id: 2, user: 'Maria', text: 'Tudo bem?', timestamp: '2025-12-04T10:01:00Z' },
   { id: 3, user: 'Pedro', text: 'Ótimo dia!', timestamp: '2025-12-04T10:02:00Z' }
 ];
 
+// Retorna todo o histórico de mensagens e metadados.
 function getAllMessages() {
   return {
     service: 'messages-api',
@@ -17,6 +19,7 @@ function getAllMessages() {
   };
 }
 
+// Retorna as últimas `limit` mensagens do histórico.
 function getRecentMessages(limit = 10) {
   return {
     service: 'messages-api',
