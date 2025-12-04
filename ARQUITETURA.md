@@ -931,31 +931,13 @@ console.log('Conexão encerrada');
 
 ---
 
-## ⚡ PERFORMANCE E ESCALABILIDADE
 
-### Limitações Atuais (por ser em memória):
-- ❌ **Não persiste dados** - Reiniciar servidor perde tudo
-- ❌ **Não escala horizontalmente** - Uma instância apenas
-- ❌ **Limite de conexões** - ~10.000 por servidor Node.js
 
-### Otimizações Implementadas:
-- ✅ **Map ao invés de Array** - O(1) para operações
-- ✅ **readyState check** - Não envia para conexões mortas
-- ✅ **JSON.stringify apenas uma vez** - Reutiliza string serializada
-- ✅ **Event-driven** - Não usa polling
 
-### Para Produção (melhorias necessárias):
-- 🔄 **Redis** - Para compartilhar estado entre instâncias
-- 🔄 **Database** - PostgreSQL/MongoDB para persistência
-- 🔄 **Load Balancer** - NGINX para múltiplas instâncias
-- 🔄 **WebSocket Sticky Sessions** - Garantir mesma instância
-- 🔄 **Rate Limiting** - Prevenir spam
-- 🔄 **Autenticação** - JWT tokens
-- 🔄 **Compression** - gzip para mensagens
 
 ---
 
-## 🎓 CONCEITOS APLICADOS
+##  CONCEITOS APLICADOS
 
 ### 1. API Gateway Pattern
 - ✅ Ponto único de entrada
@@ -989,42 +971,6 @@ console.log('Conexão encerrada');
 
 ---
 
-## 📋 CHECKLIST DE FUNCIONAMENTO
-
-### Inicialização:
-- [x] Express server iniciado
-- [x] WebSocket habilitado
-- [x] Services carregados
-- [x] Rotas registradas
-- [x] Swagger disponível
-- [x] Servidor escutando em 0.0.0.0:3000
-
-### API Gateway REST:
-- [x] GET /api retorna HATEOAS
-- [x] GET /api/users retorna lista
-- [x] GET /api/users/:id retorna usuário
-- [x] GET /api/messages retorna histórico
-- [x] GET /api/messages/recent?limit=N funciona
-- [x] 404 tratado corretamente
-
-### WebSocket Server:
-- [x] Aceita conexões em /ws
-- [x] Envia mensagem de boas-vindas
-- [x] Valida username
-- [x] Broadcast de mensagens
-- [x] Lista de usuários sincronizada
-- [x] Cleanup ao desconectar
-
-### WebSocket Client:
-- [x] Conecta automaticamente
-- [x] Modal de username
-- [x] Envia mensagens
-- [x] Recebe mensagens
-- [x] Atualiza lista de usuários
-- [x] Reconexão (manual - recarregar página)
-
----
-
 ## 🎯 RESUMO EXECUTIVO
 
 Este sistema implementa uma **arquitetura completa de API Gateway com WebSocket** demonstrando:
@@ -1043,4 +989,3 @@ Este sistema implementa uma **arquitetura completa de API Gateway com WebSocket*
 
 **Padrões:** API Gateway, Microservices, HATEOAS, REST, Event-Driven
 
-✅ **SISTEMA 100% FUNCIONAL E PRONTO PARA APRESENTAÇÃO**
