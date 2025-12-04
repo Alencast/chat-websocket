@@ -7,6 +7,8 @@ const express = require('express');
 const expressWs = require('express-ws');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
+const usersService = require('./services/usersService');
+const messagesService = require('./services/messagesService');
 
 const app = express();
 const wsInstance = expressWs(app);
@@ -24,17 +26,95 @@ app.use(express.static('public'));
 // Swagger Documentation
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Rota de status da API
+// HATEOAS - Endpoint raiz da API Gateway
 app.get('/api', (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
   const wsProtocol = req.protocol === 'https' ? 'wss' : 'ws';
   
   res.json({
-    message: 'Chat em Tempo Real - WebSocket',
+    message: 'API Gateway - Chat WebSocket com Microserviços',
+    version: '1.0.0',
     status: 'online',
-    users: chatClients.size,
-    websocket: `${wsProtocol}://${req.get('host')}/ws`,
-    documentation: '/docs'
+    activeUsers: chatClients.size,
+    _links: {
+      self: {
+        href: `${baseUrl}/api`,
+        method: 'GET',
+        description: 'Endpoint raiz com HATEOAS'
+      },
+      users: {
+        href: `${baseUrl}/api/users`,
+        method: 'GET',
+        description: 'API de Usuários (Service A)'
+      },
+      userById: {
+        href: `${baseUrl}/api/users/{id}`,
+        method: 'GET',
+        description: 'Buscar usuário por ID',
+        templated: true
+      },
+      messages: {
+        href: `${baseUrl}/api/messages`,
+        method: 'GET',
+        description: 'API de Mensagens (Service B)'
+      },
+      recentMessages: {
+        href: `${baseUrl}/api/messages/recent`,
+        method: 'GET',
+        description: 'Buscar mensagens recentes'
+      },
+      chat: {
+        href: `${baseUrl}/`,
+        method: 'GET',
+        description: 'Interface web do chat'
+      },
+      websocket: {
+        href: `${wsProtocol}://${req.get('host')}/ws`,
+        protocol: 'websocket',
+        description: 'Endpoint WebSocket para chat em tempo real'
+      },
+      documentation: {
+        href: `${baseUrl}/docs`,
+        method: 'GET',
+        description: 'Documentação Swagger da API'
+      }
+    }
   });
+});
+
+// API Gateway - Rota para Service A (Usuários)
+app.get('/api/users', (req, res) => {
+  console.log('[Gateway] → Service A: Requisição para listar usuários');
+  const data = usersService.getAllUsers();
+  res.json(data);
+});
+
+app.get('/api/users/:id', (req, res) => {
+  console.log(`[Gateway] → Service A: Requisição para usuário ID ${req.params.id}`);
+  const data = usersService.getUserById(req.params.id);
+  
+  if (!data.found) {
+    return res.status(404).json({
+      error: 'Usuário não encontrado',
+      service: 'users-api'
+    });
+  }
+  
+  res.json(data);
+});
+
+// API Gateway - Rota para Service B (Mensagens)
+app.get('/api/messages', (req, res) => {
+  console.log('[Gateway] → Service B: Requisição para listar mensagens');
+  const data = messagesService.getAllMessages();
+  res.json(data);
+});
+
+app.get('/api/messages/recent', (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  console.log(`[Gateway] → Service B: Requisição para ${limit} mensagens recentes`);
+  const data = messagesService.getRecentMessages(limit);
+  res.json(data);
 });
 
 // Função para broadcast de mensagem para todos os clientes
@@ -211,15 +291,48 @@ app.get('/', (req, res) => {
   res.redirect('/index.html');
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
+// Função para obter IP local
+function getLocalIP() {
+  const os = require('os');
+  const interfaces = os.networkInterfaces();
+  
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+// Iniciar servidor em todas as interfaces (0.0.0.0)
+app.listen(PORT, '0.0.0.0', () => {
+  const localIP = getLocalIP();
+  
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║           💬 Chat em Tempo Real - WebSocket               ║');
+  console.log('║        🚀 API Gateway + WebSocket - Servidor Ativo        ║');
   console.log('╠═══════════════════════════════════════════════════════════╣');
-  console.log(`║  🌐 Chat Web: http://localhost:${PORT}                      ║`);
-  console.log(`║  🔌 WebSocket: ws://localhost:${PORT}/ws                    ║`);
-  console.log(`║  📚 Docs: http://localhost:${PORT}/docs                     ║`);
-  console.log(`║  📊 Status: http://localhost:${PORT}/api                    ║`);
+  console.log('║  🖥️  Acesso Local:                                        ║');
+  console.log(`║     http://localhost:${PORT}                                ║`);
+  console.log('║                                                           ║');
+  console.log('║  🌐 Acesso na Rede:                                       ║');
+  console.log(`║     http://${localIP}:${PORT}${' '.repeat(39 - localIP.length)}║`);
+  console.log('║                                                           ║');
+  console.log('║  📄 Endpoints REST (HATEOAS):                             ║');
+  console.log(`║     • Gateway: http://localhost:${PORT}/api                 ║`);
+  console.log(`║     • Usuários: http://localhost:${PORT}/api/users          ║`);
+  console.log(`║     • Mensagens: http://localhost:${PORT}/api/messages      ║`);
+  console.log('║                                                           ║');
+  console.log('║  🔌 WebSocket:                                            ║');
+  console.log(`║     • Endpoint: ws://localhost:${PORT}/ws                   ║`);
+  console.log('║                                                           ║');
+  console.log('║  📚 Documentação:                                         ║');
+  console.log(`║     • Swagger: http://localhost:${PORT}/docs                ║`);
+  console.log('║                                                           ║');
+  console.log('║  💬 Cliente Web:                                          ║');
+  console.log(`║     • Chat: http://localhost:${PORT}/                       ║`);
   console.log('╚═══════════════════════════════════════════════════════════╝');
-  console.log('\n✅ Servidor pronto! Abra múltiplas abas para testar o chat.\n');
+  console.log('\n✅ Servidor pronto!');
+  console.log(`📱 Compartilhe com outros na rede: http://${localIP}:${PORT}\n`);
 });

@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "API Gateway com WebSocket",
+    "title": "API Gateway - Chat WebSocket com Microserviços",
     "version": "1.0.0",
-    "description": "API Gateway centralizado que integra dois serviços internos (Service A e Service B) e fornece comunicação WebSocket em tempo real. Implementa HATEOAS para navegabilidade da API."
+    "description": "API Gateway centralizado que integra dois microserviços internos: **Service A (API de Usuários)** e **Service B (API de Mensagens)**. Fornece comunicação WebSocket em tempo real para chat e implementa HATEOAS para navegabilidade completa da API."
   },
   "servers": [
     {
@@ -14,12 +14,12 @@
   "paths": {
     "/api": {
       "get": {
-        "summary": "Retorna os links HATEOAS da API",
-        "description": "Endpoint raiz que retorna todos os recursos disponíveis na API seguindo o princípio HATEOAS (Hypermedia as the Engine of Application State)",
+        "summary": "Gateway raiz com HATEOAS",
+        "description": "Endpoint raiz do API Gateway que retorna todos os recursos disponíveis seguindo o princípio HATEOAS (Hypermedia as the Engine of Application State). Retorna links navegáveis para todas as APIs e serviços.",
         "tags": ["HATEOAS"],
         "responses": {
           "200": {
-            "description": "Links HATEOAS retornados com sucesso",
+            "description": "Links HATEOAS e status do Gateway retornados com sucesso",
             "content": {
               "application/json": {
                 "schema": {
@@ -27,47 +27,128 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "API Gateway - WebSocket Demo"
+                      "example": "API Gateway - Chat WebSocket com Microserviços"
                     },
-                    "links": {
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "online"
+                    },
+                    "activeUsers": {
+                      "type": "integer",
+                      "example": 3,
+                      "description": "Número de usuários atualmente conectados ao chat"
+                    },
+                    "_links": {
                       "type": "object",
+                      "description": "Links HATEOAS para navegação da API",
                       "properties": {
                         "self": {
                           "type": "object",
                           "properties": {
                             "href": {
                               "type": "string",
-                              "example": "/api"
+                              "example": "http://localhost:3000/api"
                             },
                             "method": {
                               "type": "string",
                               "example": "GET"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "Endpoint raiz com HATEOAS"
                             }
                           }
                         },
-                        "service-a": {
+                        "users": {
                           "type": "object",
                           "properties": {
                             "href": {
                               "type": "string",
-                              "example": "/api/service-a"
+                              "example": "http://localhost:3000/api/users"
                             },
                             "method": {
                               "type": "string",
                               "example": "GET"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "API de Usuários (Service A)"
                             }
                           }
                         },
-                        "service-b": {
+                        "userById": {
                           "type": "object",
                           "properties": {
                             "href": {
                               "type": "string",
-                              "example": "/api/service-b"
+                              "example": "http://localhost:3000/api/users/{id}"
                             },
                             "method": {
                               "type": "string",
                               "example": "GET"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "Buscar usuário por ID"
+                            },
+                            "templated": {
+                              "type": "boolean",
+                              "example": true
+                            }
+                          }
+                        },
+                        "messages": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "http://localhost:3000/api/messages"
+                            },
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "API de Mensagens (Service B)"
+                            }
+                          }
+                        },
+                        "recentMessages": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "http://localhost:3000/api/messages/recent"
+                            },
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "Buscar mensagens recentes"
+                            }
+                          }
+                        },
+                        "chat": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "http://localhost:3000/"
+                            },
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "Interface web do chat"
                             }
                           }
                         },
@@ -81,6 +162,10 @@
                             "protocol": {
                               "type": "string",
                               "example": "websocket"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "Endpoint WebSocket para chat em tempo real"
                             }
                           }
                         },
@@ -89,11 +174,15 @@
                           "properties": {
                             "href": {
                               "type": "string",
-                              "example": "/docs"
+                              "example": "http://localhost:3000/docs"
                             },
                             "method": {
                               "type": "string",
                               "example": "GET"
+                            },
+                            "description": {
+                              "type": "string",
+                              "example": "Documentação Swagger da API"
                             }
                           }
                         }
@@ -107,14 +196,14 @@
         }
       }
     },
-    "/api/service-a": {
+    "/api/users": {
       "get": {
-        "summary": "Consulta o Service A",
-        "description": "Retorna informações do Service A através do API Gateway",
-        "tags": ["Services"],
+        "summary": "Lista todos os usuários (Service A)",
+        "description": "Retorna a lista completa de usuários através do API Gateway, consumindo o Service A (API de Usuários)",
+        "tags": ["Service A - Usuários"],
         "responses": {
           "200": {
-            "description": "Dados do Service A retornados com sucesso",
+            "description": "Lista de usuários retornada com sucesso",
             "content": {
               "application/json": {
                 "schema": {
@@ -122,11 +211,35 @@
                   "properties": {
                     "service": {
                       "type": "string",
-                      "example": "A"
+                      "example": "users-api"
                     },
-                    "status": {
-                      "type": "string",
-                      "example": "ok"
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "João Silva"
+                          },
+                          "email": {
+                            "type": "string",
+                            "example": "joao@email.com"
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "active"
+                          }
+                        }
+                      }
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 3
                     }
                   }
                 }
@@ -136,14 +249,25 @@
         }
       }
     },
-    "/api/service-b": {
+    "/api/users/{id}": {
       "get": {
-        "summary": "Consulta o Service B",
-        "description": "Retorna informações do Service B através do API Gateway",
-        "tags": ["Services"],
+        "summary": "Busca usuário por ID (Service A)",
+        "description": "Retorna os dados de um usuário específico através do API Gateway, consumindo o Service A",
+        "tags": ["Service A - Usuários"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do usuário",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Dados do Service B retornados com sucesso",
+            "description": "Usuário encontrado",
             "content": {
               "application/json": {
                 "schema": {
@@ -151,11 +275,148 @@
                   "properties": {
                     "service": {
                       "type": "string",
-                      "example": "B"
+                      "example": "users-api"
                     },
-                    "status": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "João Silva"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "joao@email.com"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "active"
+                        }
+                      }
+                    },
+                    "found": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado"
+          }
+        }
+      }
+    },
+    "/api/messages": {
+      "get": {
+        "summary": "Lista todas as mensagens (Service B)",
+        "description": "Retorna o histórico completo de mensagens através do API Gateway, consumindo o Service B (API de Mensagens)",
+        "tags": ["Service B - Mensagens"],
+        "responses": {
+          "200": {
+            "description": "Lista de mensagens retornada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
                       "type": "string",
-                      "example": "ok"
+                      "example": "messages-api"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "user": {
+                            "type": "string",
+                            "example": "João"
+                          },
+                          "text": {
+                            "type": "string",
+                            "example": "Olá pessoal!"
+                          },
+                          "timestamp": {
+                            "type": "string",
+                            "example": "2025-12-04T10:00:00Z"
+                          }
+                        }
+                      }
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/messages/recent": {
+      "get": {
+        "summary": "Busca mensagens recentes (Service B)",
+        "description": "Retorna as mensagens mais recentes através do API Gateway, consumindo o Service B",
+        "tags": ["Service B - Mensagens"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Número máximo de mensagens a retornar",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mensagens recentes retornadas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
+                      "type": "string",
+                      "example": "messages-api"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "user": {
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "timestamp": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
                     }
                   }
                 }
@@ -172,8 +433,12 @@
       "description": "Endpoints que implementam Hypermedia as the Engine of Application State"
     },
     {
-      "name": "Services",
-      "description": "Serviços internos disponíveis através do Gateway"
+      "name": "Service A - Usuários",
+      "description": "API interna de gerenciamento de usuários (Microserviço A)"
+    },
+    {
+      "name": "Service B - Mensagens",
+      "description": "API interna de histórico de mensagens (Microserviço B)"
     }
   ],
   "components": {
