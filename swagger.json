@@ -1,0 +1,197 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Gateway com WebSocket",
+    "version": "1.0.0",
+    "description": "API Gateway centralizado que integra dois serviços internos (Service A e Service B) e fornece comunicação WebSocket em tempo real. Implementa HATEOAS para navegabilidade da API."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor de desenvolvimento local"
+    }
+  ],
+  "paths": {
+    "/api": {
+      "get": {
+        "summary": "Retorna os links HATEOAS da API",
+        "description": "Endpoint raiz que retorna todos os recursos disponíveis na API seguindo o princípio HATEOAS (Hypermedia as the Engine of Application State)",
+        "tags": ["HATEOAS"],
+        "responses": {
+          "200": {
+            "description": "Links HATEOAS retornados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "API Gateway - WebSocket Demo"
+                    },
+                    "links": {
+                      "type": "object",
+                      "properties": {
+                        "self": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "/api"
+                            },
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            }
+                          }
+                        },
+                        "service-a": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "/api/service-a"
+                            },
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            }
+                          }
+                        },
+                        "service-b": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "/api/service-b"
+                            },
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            }
+                          }
+                        },
+                        "websocket": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "ws://localhost:3000/ws"
+                            },
+                            "protocol": {
+                              "type": "string",
+                              "example": "websocket"
+                            }
+                          }
+                        },
+                        "documentation": {
+                          "type": "object",
+                          "properties": {
+                            "href": {
+                              "type": "string",
+                              "example": "/docs"
+                            },
+                            "method": {
+                              "type": "string",
+                              "example": "GET"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/service-a": {
+      "get": {
+        "summary": "Consulta o Service A",
+        "description": "Retorna informações do Service A através do API Gateway",
+        "tags": ["Services"],
+        "responses": {
+          "200": {
+            "description": "Dados do Service A retornados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
+                      "type": "string",
+                      "example": "A"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/service-b": {
+      "get": {
+        "summary": "Consulta o Service B",
+        "description": "Retorna informações do Service B através do API Gateway",
+        "tags": ["Services"],
+        "responses": {
+          "200": {
+            "description": "Dados do Service B retornados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
+                      "type": "string",
+                      "example": "B"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "HATEOAS",
+      "description": "Endpoints que implementam Hypermedia as the Engine of Application State"
+    },
+    {
+      "name": "Services",
+      "description": "Serviços internos disponíveis através do Gateway"
+    }
+  ],
+  "components": {
+    "schemas": {}
+  },
+  "x-websocket": {
+    "endpoint": "/ws",
+    "description": "Endpoint WebSocket para comunicação em tempo real. Conecte-se usando ws://localhost:3000/ws",
+    "features": [
+      "Mensagem de boas-vindas ao conectar",
+      "Echo de mensagens enviadas pelo cliente",
+      "Logging de conexões e desconexões",
+      "Comunicação bidirecional em tempo real"
+    ],
+    "example": {
+      "connection": "const ws = new WebSocket('ws://localhost:3000/ws');",
+      "send": "ws.send('Hello Server!');",
+      "receive": "ws.onmessage = (event) => console.log(event.data);"
+    }
+  }
+}
