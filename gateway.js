@@ -16,6 +16,16 @@ const usersService = require('./services/usersService');
 // Service B: encapsula operações de mensagens/histórico.
 const messagesService = require('./services/messagesService');
 
+// Função auxiliar para sincronizar usuários conectados com o service.
+function syncUsersWithService() {
+  const users = Array.from(chatClients.values()).map(client => ({
+    id: client.id,
+    username: client.username,
+    status: 'online'
+  }));
+  usersService.setConnectedUsers(users);
+}
+
 // Instância principal do aplicativo Express.
 const app = express();
 // Habilita o endpoint WebSocket via express-ws (adiciona app.ws).
@@ -233,6 +243,9 @@ app.ws('/ws', (ws, req) => {
         // Enviar lista atualizada de usuários
         broadcastUserList();
         
+        // Sincronizar com o service de usuários
+        syncUsersWithService();
+        
         return;
       }
       
@@ -245,6 +258,9 @@ app.ws('/ws', (ws, req) => {
           }));
           return;
         }
+        
+        // Salvar mensagem no histórico
+        messagesService.addMessage(username, clientId, data.message);
         
         const chatMessage = {
           type: 'message',
@@ -296,6 +312,9 @@ app.ws('/ws', (ws, req) => {
       
       // Enviar lista atualizada de usuários
       broadcastUserList();
+      
+      // Sincronizar com o service de usuários
+      syncUsersWithService();
     } else {
       console.log(`[Chat] Conexão (ID: ${clientId}) encerrada sem usuário definido`);
       chatClients.delete(ws);

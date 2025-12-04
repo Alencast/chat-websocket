@@ -1,21 +1,32 @@
 /**
  * Service B - API de Mensagens
- * Simula um serviço interno de histórico de mensagens
+ * Armazena histórico real de mensagens do chat
  */
 
-// Histórico mockado de mensagens (somente em memória).
-const messages = [
-  { id: 1, user: 'João', text: 'Olá pessoal!', timestamp: '2025-12-04T10:00:00Z' },
-  { id: 2, user: 'Maria', text: 'Tudo bem?', timestamp: '2025-12-04T10:01:00Z' },
-  { id: 3, user: 'Pedro', text: 'Ótimo dia!', timestamp: '2025-12-04T10:02:00Z' }
-];
+// Histórico de mensagens do chat (em memória, atualizado em tempo real).
+const messages = [];
+let messageIdCounter = 0;
+
+// Adiciona uma nova mensagem ao histórico (chamado pelo gateway).
+function addMessage(username, userId, text) {
+  const message = {
+    id: ++messageIdCounter,
+    userId: userId,
+    username: username,
+    text: text,
+    timestamp: new Date().toISOString()
+  };
+  messages.push(message);
+  return message;
+}
 
 // Retorna todo o histórico de mensagens e metadados.
 function getAllMessages() {
   return {
     service: 'messages-api',
     data: messages,
-    count: messages.length
+    count: messages.length,
+    note: 'Histórico completo de mensagens do chat'
   };
 }
 
@@ -24,11 +35,13 @@ function getRecentMessages(limit = 10) {
   return {
     service: 'messages-api',
     data: messages.slice(-limit),
-    count: Math.min(limit, messages.length)
+    count: Math.min(limit, messages.length),
+    note: `Últimas ${Math.min(limit, messages.length)} mensagens`
   };
 }
 
 module.exports = {
   getAllMessages,
-  getRecentMessages
+  getRecentMessages,
+  addMessage
 };

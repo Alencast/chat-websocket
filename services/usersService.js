@@ -1,27 +1,29 @@
 /**
  * Service A - API de Usuários
- * Simula um serviço interno de gerenciamento de usuários
+ * Retorna usuários conectados em tempo real via WebSocket
  */
 
-// Base de dados mockada de usuários (somente em memória).
-const users = [
-  { id: 1, name: 'João Silva', email: 'joao@email.com', status: 'active' },
-  { id: 2, name: 'Maria Santos', email: 'maria@email.com', status: 'active' },
-  { id: 3, name: 'Pedro Costa', email: 'pedro@email.com', status: 'inactive' }
-];
+// Lista de usuários conectados no chat (atualizada pelo gateway).
+let connectedUsers = [];
 
-// Retorna todos os usuários cadastrados e metadados.
+// Atualiza a lista de usuários conectados (chamado pelo gateway).
+function setConnectedUsers(users) {
+  connectedUsers = users;
+}
+
+// Retorna todos os usuários conectados no chat.
 function getAllUsers() {
   return {
     service: 'users-api',
-    data: users,
-    count: users.length
+    data: connectedUsers,
+    count: connectedUsers.length,
+    note: 'Usuários conectados em tempo real via WebSocket'
   };
 }
 
-// Busca usuário pelo ID (number) e informa se foi encontrado.
+// Busca usuário conectado pelo ID.
 function getUserById(id) {
-  const user = users.find(u => u.id === parseInt(id));
+  const user = connectedUsers.find(u => u.id === parseInt(id));
   return {
     service: 'users-api',
     data: user || null,
@@ -31,5 +33,6 @@ function getUserById(id) {
 
 module.exports = {
   getAllUsers,
-  getUserById
+  getUserById,
+  setConnectedUsers
 };
