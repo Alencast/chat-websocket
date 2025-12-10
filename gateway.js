@@ -15,6 +15,8 @@ const swaggerDocument = require('./swagger.json');
 const usersService = require('./services/usersService');
 // Service B: encapsula operações de mensagens/histórico.
 const messagesService = require('./services/messagesService');
+// Serviço RabbitMQ: integração com fila de mensagens (produtor).
+const rabbitmq = require('./services/rabbitmq');
 
 // Função auxiliar para sincronizar usuários conectados com o service.
 function syncUsersWithService() {
@@ -178,6 +180,11 @@ function broadcastUserList() {
 
 // WebSocket Endpoint - Chat em Tempo Real
 // Endpoint WebSocket: gerencia conexão, username e troca de mensagens.
+
+//Aceita a conexão WebSocket
+ //Gera ID único para o cliente
+ //Envia mensagem de boas-vindas
+ //Registra event handlers (próxima etapa)
 app.ws('/ws', (ws, req) => {
   const clientId = ++clientIdCounter;
   let username = null;
@@ -272,6 +279,14 @@ app.ws('/ws', (ws, req) => {
         
         console.log(`[Chat] ${username}: ${data.message}`);
         
+        // Publicar mensagem no RabbitMQ (produtor)
+        rabbitmq.publishMessage({
+          username: username,
+          userId: clientId,
+          message: data.message,
+          timestamp: chatMessage.timestamp
+        });
+        
         // Enviar para todos (incluindo o remetente)
         chatClients.forEach((client, clientWs) => {
           if (clientWs.readyState === 1) {
@@ -352,8 +367,11 @@ function getLocalIP() {
 
 // Iniciar servidor em todas as interfaces (0.0.0.0)
 // Inicializa servidor escutando em 0.0.0.0 (acesso LAN).
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   const localIP = getLocalIP();
+  
+  // Inicializar RabbitMQ
+  await rabbitmq.connect();
   
   console.log('╔═══════════════════════════════════════════════════════════╗');
   console.log('║        🚀 API Gateway + WebSocket - Servidor Ativo        ║');
